@@ -1,0 +1,44 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+
+  deploy:
+    name: Deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+    - name: Set NODE_ENV Prod
+      run: |
+        echo "NODE_ENV=production" >> $GITHUB_ENV
+
+    - name: Print
+      run: echo "Deploying to $NODE_ENV"
+
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Install aws-iam-authenticator
+      run: |
+        curl -LO https://github.com/kubernetes-sigs/aws-iam-authenticator/releases/download/v0.5.2/aws-iam-authenticator_0.5.2_linux_amd64
+        mkdir ~/.aws_iam
+        mv ./aws-iam-authenticator_0.5.2_linux_amd64 ~/.aws_iam/aws-iam-authenticator
+        chmod 755 ~/.aws_iam/aws-iam-authenticator
+        echo "$HOME/.aws_iam" >> $GITHUB_PATH
+
+    - name: Deploy to s3 and invalidate cloudfront cache (prod)
+      if: github.ref == 'refs/heads/master'
+      run: |
+        aws s3 sync --acl public-read www/ s3://lastnightgames.com
+        aws cloudfront create-invalidation --distribution-id E2IOHKKQXQR5U4 --paths '/*'
