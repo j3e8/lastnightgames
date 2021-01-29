@@ -40,5 +40,5 @@ jobs:
     - name: Deploy to s3 and invalidate cloudfront cache (prod)
       if: github.ref == 'refs/heads/master'
       run: |
-        aws s3 sync --acl public-read www/ s3://lastnightgames.com
-        aws cloudfront create-invalidation --distribution-id E2IOHKKQXQR5U4 --paths '/*'
+        aws s3 sync --acl public-read src/ s3://lastnightgames.com
+        aws cloudfront create-invalidation --distribution-id EQSUMVE2ZA6RT --paths '/*'
